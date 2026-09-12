@@ -16,7 +16,7 @@ class BillHouse(str, enum.Enum):
 
 class BillStatus(str, enum.Enum):
     """
-    Fixed enum, not free text — per our discussion, scraped status strings
+    Fixed enum from scraped status strings
     (which vary in wording between sources) get mapped to one of these during
     ingestion. The raw scraped string is kept separately in `raw_status_text`
     for debugging when the mapping is unclear.

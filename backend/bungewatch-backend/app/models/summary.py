@@ -29,7 +29,6 @@ class Summary(Base):
     version: Mapped[int] = mapped_column(Integer, default=1)
 
     summary_full: Mapped[str] = mapped_column(Text)
-    summary_short_ussd: Mapped[str] = mapped_column(String(500))  # constrained for USSD screen limits
 
     pros: Mapped[list] = mapped_column(JSONB, default=list)
     cons: Mapped[list] = mapped_column(JSONB, default=list)
