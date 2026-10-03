@@ -11,7 +11,3 @@ app = FastAPI(
 app.include_router(health.router)
 app.include_router(bills.router)
 
-# Routers to add as we build them out:
-# app.include_router(subscriptions.router)
-# app.include_router(whatsapp_webhook.router)
-# app.include_router(ussd_webhook.router)
