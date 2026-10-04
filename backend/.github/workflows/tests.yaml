@@ -1,0 +1,39 @@
+name: Tests
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    env:
+      TESTING: "True"
+      DEBUG: "False"
+      SECRET_KEY: "ci_test_secret_key_not_real"
+      ALGORITHM: "HS256"
+      DATABASE_URL: "sqlite:///./test.db"
+    steps:
+      - name: Checkout repository
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          uv pip install --system -r requirements.txt
+      
+      - name: Run all tests
+        working-directory: backend
+        run: pytest tests/ -v

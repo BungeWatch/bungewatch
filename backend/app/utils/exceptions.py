@@ -75,3 +75,23 @@ class NotificationDeliveryError(ExternalServiceError):
 class ScraperError(ExternalServiceError):
     """Raised when a scraper can't reach or parse a source site"""
     pass
+
+class AIModelError(ExternalServiceError):
+    """
+    Raised when the AI call fails outright, or returns output that
+    fails validation after all retries are exhausted.
+    """
+    pass
+
+class BillTooLongError(BungeWatchError):
+    """
+    Raised when bill text exceeds the model's safe context window.
+    status_code defaults to 500 via the base class
+    """
+    status_code = 422
+
+    def __init__(self, token_count: int, limit: int):
+        super().__init__(
+            f"Bill text has ~{token_count} tokens, exceeding the {limit} token limit for single-pass summarization.",
+            debug_context={"token_count": token_count, "limit": limit},
+        )
