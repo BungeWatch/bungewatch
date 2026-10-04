@@ -1,9 +1,14 @@
 from unittest.mock import patch, MagicMock
 import pytest
+import asyncio
+import time
 
-from app.services.ai_summarizer import summarize_bill, validate_summary_output
+from app.services.ai_summarizer import summarize_bill, validate_summary_output, asummarize_bill
 from app.utils.exceptions import AIModelError, BillTooLongError
+from app.schemas.ai_summary import SummaryOutput
 
+pytestmark_async = pytest.mark.asyncio
+ 
 VALID_RAW_OUTPUT = {
     "summary_full": "This bill does X.",
     "pros": [{"point": "Improves Y", "section_reference": "Section 3(1)"}],
@@ -12,6 +17,15 @@ VALID_RAW_OUTPUT = {
     "notes": None,
 }
 
+
+def _fake_summary_output():
+    return SummaryOutput(
+        summary_full="Fake summary.",
+        pros=[{"point": "X", "section_reference": "Section 1"}],
+        cons=[],
+        sectors_affected=["agriculture"],
+        notes=None,
+    )
 
 def _mock_tool_use_response(input_dict: dict):
     """Builds a fake Anthropic response shaped like a real tool_use reply."""
@@ -69,3 +83,31 @@ def test_summarize_bill_raises_bill_too_long_before_calling_create(mock_client):
         summarize_bill("Huge Bill", "massive text" * 100000)
 
     mock_client.messages.create.assert_not_called()  # should never reach the actual call
+
+@pytest.mark.asyncio
+@patch("app.services.ai_summarizer.summarize_bill")
+async def test_asummarize_bill_does_not_block_event_loop(mock_summarize):
+    """
+    Proves the specific property asyncio.to_thread exists for: two
+    concurrent calls should run ALONGSIDE each other (interleaved on
+    separate threads), not block the event loop and serialize. If someone
+    later 'simplifies' asummarize_bill back to a direct synchronous call,
+    this test should fail.
+    """
+    def slow_summarize(title, text, max_retries=2):
+        time.sleep(0.2)  # simulates a blocking call
+        return _fake_summary_output()
+
+    mock_summarize.side_effect = slow_summarize
+
+    start = time.monotonic()
+    await asyncio.gather(
+        asummarize_bill("Bill A", "text a"),
+        asummarize_bill("Bill B", "text b"),
+    )
+    elapsed = time.monotonic() - start
+
+    # If truly concurrent (threaded), ~0.2s total, not ~0.4s serialized.
+    # Generous threshold to avoid CI flakiness, but tight enough to catch
+    # a regression back to blocking behavior.
+    assert elapsed < 0.35

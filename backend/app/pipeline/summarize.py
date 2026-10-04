@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.bills_repository import find_bill_by_id
 from app.repositories.summaries_repository import create_draft_summary
 from app.services.ai_summarizer import asummarize_bill, MODEL_NAME
-from app.utils.exceptions import BillTooLongError, AIModelError, NotFoundError
+from app.utils.exceptions import BillTooLongError, AIModelError, ResourceNotFoundError
 from app.pipeline.chunking import needs_chunking, summarize_long_bill
 
 logger = logging.getLogger("bungewatch.pipeline")
